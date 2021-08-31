@@ -2320,113 +2320,43 @@ class Visdom(object):
         return self._send(datasend, 'events')
 
     @pytorch_wrap
-    def graph(self, graphDict, opts=None, env=None, win=None):
-        """This function draws interactive network graphs. It takes in an Graph Dictionary for types of Graphs,
-        Graph ("gph"), Directed Graph ("dgph"), Weighted Graph ("wgph") and Directed Weighted Graph ("dwgph").
-        where nodes are defined by numbers from (0 to n-1) where n is the number of nodes.
+    def graph(self, nodes, edges, opts=dict(), env=None, win=None):
+        """
+        This function draws interactive network graphs. It accepts a list of
+        `nodes` and a list of `edges` that can be easily extracted from a
+        NetworkX graph `G` as `G.nodes` and `G.edges`. The `opts` dict has
+        the `directed` boolean flag that specifies whether the graph is
+        directed or not.
 
         Args:
-            graphDict (dict, required):
-                "gph" -> graphDict -> {"0" : [{"value " : 1}, ...], "1" : [{"value" : 1}, ...] , ...}
-                "dgph" -> graphDict -> {"0" : [{"value" : 1}, ...], "1" : [{"value" :3}, ...] , ...} 
-                "wgph" -> graphDict -> {"0" : [{"value" : 1, "weight" :3} ...], "2" : [{"value" : 3, "weight" :3},  ...] , ...} 
-                "dwgph" -> graphDict -> {"0" : [{"value" : 1, "weight" :3} ...], "2" : [{"value" : 3, "weight" :3},  ...] , ...}. 
-            opts (dict, optional): 
-                type : type of graph ["gph", "dgph", "wgph", "dwgph"]
-                height : height of the Pane.
-                width : width of the Pane.
-                showEdgeLabels : boolean, (default = False) if True it shows edge labels.
-                showVertexLabels : boolean, (default = True) if True it shows edge labels.
-                labels : str, (default : "default") 
-                    if "default"
-                        labels will be a string concatenation of nodes ["A-B"] in case of ("gph", "wgph")
-                    if "custom" 
-                        labels will be the the custom label provided. Therefore 'label' field is compulsory in
-                        each dict.
-        """        
-        try:
-            from cerberus import Validator
-        except:
-            raise RuntimeError(
-                "Cerebus must be installed to plot Graph figures")
-
-        # Raise error if type not among one of the types
-        assert opts.get("type", "gph") in [
-            "gph", "dgph", "wgph", "dwgph"],\
-            "Invalid graph type {}, should be one of ['gph', 'dgph', 'wgph', 'dwgph']".format(
-                opts.get("type"))
-
-        # Raise error if labels is other than custom and default
-        assert opts.get("labels", "default") in ["default", "custom"],\
-            "Invalid labels: {}, labels should be one of ['default', 'custom']".format(
-                opts.get("labels"))
-
-        # validation of user input Dict
-        schema_for_graph = {
-            "value": {'type': 'integer', 'required': True},
-            "weight": {'type': 'integer', "required": True if opts.get('type', "gph") in ["wgph", "dwgph"] else False},
-            "label": {'type': 'string', "required": True if opts.get('labels', "default") == "custom" else False}
-        }
-        v = Validator(schema_for_graph)
-        for key, value in graphDict.items():
-            for val in value:
-                if not v.validate(val):
-                    raise RuntimeError(v.errors)
-
-        # Creating Data in defined format
-        links = []
-        for key, value in graphDict.items():
-            for v in value:
-                link = {}
-                link["source"] = key
-                link["target"] = v["value"]
-                link["weight"] = v.get("weight", 0)
-                if opts.get("labels") == "custom":
-                    link["label"] = v["label"]
-                elif opts.get("labels") == "default":
-                    if opts.get("type", "gph") in ["dwgph", "wgph"]:
-                        link["label"] = v["weight"]
-                    else:
-                        link["label"] = str(key) + "-" + str(v["value"])
-                links.append(link)
-
-        nodes = []
-        visited = set()
-        for link in links:
-            if link["source"] not in visited:
-                node = {"name": str(link["source"])}
-                nodes.append(node)
-                visited.add(link["source"])
-            if link["target"] not in visited:
-                node = {"name": str(link["target"])}
-                nodes.append(node)
-                visited.add(link["target"])
-
-        for i in range(len(visited)):
-            if i not in visited:
-                raise RuntimeError(
-                    "Graph you provided should contain nodes from 0 to n-1, but {} was missing.".format(i))
-
-        GData = {
-            "nodes": nodes,
-            "links": links
-        }
-
-        jsonstring = json.dumps(GData)
-        GData = json.loads(jsonstring)
-
+            nodes : list
+                A list of graph nodes. When using NetworkX, `G.nodes` should be here.
+            edges : list
+                A list of graph edges in one of the following formats:
+                    * `(source, target)`
+                    * `(source, target, {"weight": 0.2, ...})`
+                When using NetworkX, `G.edges` should be here.
+            opts : dict, optional
+                * `directed` : directed (True) or undirected (False) graph; False by default
+                * `showVertexLabels` : `{"center", "hover"}` draw nodes on hover or embed in the center; `"hover"` by default
+                * `showEdgeLabels` : `{"center", "hover"}` draw edges on hover or embed in the center; `"hover"` by default
+                * `height` : height of the Pane
+                * `width` : width of the Pane
+        """
+        opts['directed'] = opts.get('directed', False)
+        opts['showVertexLabels'] = opts.get('showVertexLabels', "hover")
+        opts['showEdgeLabels'] = opts.get('showEdgeLabels', "hover")
         opts['height'] = opts.get('height', 500)
         opts['width'] = opts.get('width', 500)
 
         data = [{
-            'content': GData,
+            'content': {"nodes": nodes, "edges": edges},
             'type': 'network'
         }]
-        endpoint = 'events'
 
         return self._send({
             'data': data,
             'win': win,
             'eid': env,
             'opts': opts
-        }, endpoint=endpoint)
+        }, endpoint='events')

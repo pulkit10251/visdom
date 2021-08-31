@@ -572,13 +572,14 @@ def run_demo(viz):
     input('Waiting for callbacks, press enter to quit.')
 
     # plot network graph
-    GraphDicts = {
-        0 : [{'value': 1, 'label': 'A'}, {'value': 2, 'label': 'B'}], 
-        1 : [{'value':3, 'label': 'C'},{'value':4, 'label': 'D'},{'value': 5, 'label': 'E'}], 
-        4 : [{'value': 5, 'label': 'F'}]
-    }
+    # A simple directed graph
+    nodes = ('a', 'b', 'c')
+    edges = [('a', 'b'), ('a', 'c'), ('b', 'c')]
+    viz.graph(nodes, edges, opts={'directed': True})
 
-    viz.graph(GraphDicts, opts={'type' : "wgph", 'showEdgeLabels': True, 'showVertexLabels': True, "labels": "custom"})
+    # An undirected weighted graph
+    edges = [('a', 'b', {"weight": 0.1}), ('a', 'c', {"weight": 1.2}), ('b', 'c', {"weight": 0.76})]
+    viz.graph(nodes, edges, opts={'directed': False})
 
 
 if __name__ == '__main__':

@@ -755,12 +755,11 @@ def window(args):
         p.update({'content': args['data'][0]['content'], 'type': ptype})
     elif ptype == 'network':
         p.update({
-            'content': args['data'][0]['content'] , 
+            'content': args['data'][0]['content'] ,
             'type': ptype,
-            'showEdgeLabels' : opts.get("showEdgeLabels", False),
-            'showVertexLabels' : opts.get("showVertexLabels", True),
-            'labels': opts.get("labels", "default"),
-            'Gtype': opts.get("type", "gph"),
+            'directed': opts.get("directed", False),
+            'showEdgeLabels' : opts.get("showEdgeLabels", "hover"),
+            'showVertexLabels' : opts.get("showVertexLabels", "hover"),
         })
     elif ptype in ['embeddings']:
         p.update({

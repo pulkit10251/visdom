@@ -139,7 +139,8 @@ class Visdom:
     def mesh(self, X: Tensor, Y: Optional[Tensor] = ..., win: _OptStr = ..., env: _OptStr = ..., opts: _OptOps = ...) -> _SendReturn: ...
     def graph(
         self,
-        graphDict: Any, 
+        nodes: Any,
+        edges: Any,
         win: _OptStr = ..., 
         env: _OptStr = ..., 
         opts: _OptOps = ...

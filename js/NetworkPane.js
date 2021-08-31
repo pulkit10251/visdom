@@ -10,12 +10,13 @@ class NetworkPane extends React.Component {
 
   handleDownload = () => {
     var link = document.createElement('a');
-    link.download = `${this.props.title || 'visdom_image'}.jpg`;
+    link.download = `${this.props.title || 'visdom_network'}.jpg`;
     link.href = this.props.content.src;
     link.click();
   };
 
   CreateNetwork = graph => {
+    // FIXME: width and height attributes should be extracted from the `opts` dict
     var width = 500,
       height = 500;
     var color = d3.scale.category10();
@@ -33,7 +34,7 @@ class NetworkPane extends React.Component {
         .attr('height', height);
     }
 
-    if (this.props.Gtype == 'dgph' || this.props.Gtype == 'dwgph') {
+    if (this.props.directed) {
       svg
         .append('defs')
         .append('marker')
@@ -55,12 +56,12 @@ class NetworkPane extends React.Component {
 
     force
       .nodes(graph.nodes)
-      .links(graph.links)
+      .links(graph.edges)
       .start();
 
     var link = svg
       .selectAll('.link')
-      .data(graph.links)
+      .data(graph.edges)
       .enter()
       .append('line')
       .attr('class', 'link')
@@ -72,7 +73,7 @@ class NetworkPane extends React.Component {
 
     var edgepaths = svg
       .selectAll('.edgepath')
-      .data(graph.links)
+      .data(graph.edges)
       .enter()
       .append('path')
       .attrs({
@@ -87,7 +88,7 @@ class NetworkPane extends React.Component {
 
     var edgelabels = svg
       .selectAll('.edgelabel')
-      .data(graph.links)
+      .data(graph.edges)
       .enter()
       .append('text')
       .style('pointer-events', 'none')
@@ -100,25 +101,13 @@ class NetworkPane extends React.Component {
         fill: '#aaa',
       });
 
-    if (this.props.showEdgeLabels) {
-      if (this.props.labels === 'custom') {
-        edgelabels
-          .append('textPath')
-          .attr('xlink:href', (d, i) => '#edgepath' + i)
-          .style('text-anchor', 'middle')
-          .style('pointer-events', 'none')
-          .attr('startOffset', '50%')
-          .text(d => d.label);
-      } else {
-        edgelabels
-          .append('textPath')
-          .attr('xlink:href', (d, i) => '#edgepath' + i)
-          .style('text-anchor', 'middle')
-          .style('pointer-events', 'none')
-          .attr('startOffset', '50%')
-          .text(d => d.label);
-      }
-    }
+    edgelabels
+      .append('textPath')
+      .attr('xlink:href', (d, i) => '#edgepath' + i)
+      .style('text-anchor', 'middle' or 'hover')  // FIXME: implement "hover" or "middle" showEdgeLabels
+      .style('pointer-events', 'none')
+      .attr('startOffset', '50%')
+      .text(d => d.label);
 
     var node = svg
       .selectAll('.node')
@@ -131,6 +120,8 @@ class NetworkPane extends React.Component {
         return color(d.club);
       })
       .call(force.drag);
+
+    // TODO: implement "hover" or "middle" showVertexLabels
 
     node.append('circle').attr('r', 10);
 
